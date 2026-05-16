@@ -1,3 +1,6 @@
+module.exports = { openModal, closeModal };
+
+
 // Функция открытия попапа
 function openModal(popup) {
   popup.classList.add('popup_is-opened');
@@ -10,7 +13,7 @@ function closeModal(popup) {
   document.removeEventListener('keydown', handleEscClose);
 }
 
-// Функция закрытия по Escape
+// Закрытие по Escape
 function handleEscClose(evt) {
   if (evt.key === 'Escape') {
     const openedPopup = document.querySelector('.popup_is-opened');
@@ -20,5 +23,16 @@ function handleEscClose(evt) {
   }
 }
 
-// Экспорт через module.exports (для require)
-module.exports = { openModal, closeModal };
+// Закрытие по клику на оверлей или крестик
+function handleOverlayClose(evt) {
+  if (evt.target === evt.currentTarget || evt.target.classList.contains('popup__close')) {
+    closeModal(evt.currentTarget);
+  }
+}
+
+// Добавление слушателей на попап
+function setPopupListeners(popup) {
+  popup.addEventListener('click', handleOverlayClose);
+}
+
+module.exports = { openModal, closeModal, setPopupListeners };

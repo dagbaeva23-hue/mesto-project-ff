@@ -12,28 +12,26 @@ const createCard = (cardData, deleteCallback, likeCallback, imageCallback) => {
   cardImage.alt = cardData.name;
   cardTitle.textContent = cardData.name;
   
- //Лайк
-  if (likeCallback) {
-    likeButton.addEventListener('click', () => likeCallback(likeButton));
-  }
+  // Лайк
+  likeButton.addEventListener('click', () => likeCallback(likeButton));
   
   // Удаление
-  if (deleteCallback) {
-    deleteButton.addEventListener('click', () => deleteCallback(cardElement));
-  }
+  deleteButton.addEventListener('click', () => deleteCallback(cardElement));
   
   // Открытие изображения
-  if (imageCallback) {
-    cardImage.addEventListener('click', () => imageCallback(cardData.link, cardData.name));
-  }
+  cardImage.addEventListener('click', () => imageCallback(cardData.link, cardData.name));
   
   return cardElement;
 };
 
-// Функция лайка (просто переключает класс)
-const likeCard = (likeButton) => {
+// Функция лайка
+const handleLike = (likeButton) => {
   likeButton.classList.toggle('card__like-button_is-active');
 };
 
-// Экспорт
-export { createCard, likeCard };
+// Функция удаления
+const handleDelete = (cardElement) => {
+  cardElement.remove();
+};
+
+module.exports = { createCard, handleLike, handleDelete };
