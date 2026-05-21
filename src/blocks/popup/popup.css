@@ -21,3 +21,25 @@
   right: 0;
   z-index: 10;
 }
+
+.popup__error_visible {
+  display: block;
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.popup__button_disabled {
+  background-color: #ccc;
+  color: #888;
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.card__likes-count {
+  font-size: 13px;
+  text-align: center;
+  margin-top: 5px;
+  color: #000;
+}

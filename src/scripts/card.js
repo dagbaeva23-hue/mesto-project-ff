@@ -1,37 +1,58 @@
-// Создание карточки
-const createCard = (cardData, deleteCallback, likeCallback, imageCallback) => {
+const { apiMestoEndpoints } = require("../api/apiMesto");
+
+const createCard = (data, profileId, handleOpenDelete, likeCallback, handleClick) => {
   const template = document.querySelector('#card-template');
-  const cardElement = template.content.querySelector('.card').cloneNode(true);
-  
-  const cardImage = cardElement.querySelector('.card__image');
-  const cardTitle = cardElement.querySelector('.card__title');
-  const likeButton = cardElement.querySelector('.card__like-button');
-  const deleteButton = cardElement.querySelector('.card__delete-button');
-  
-  cardImage.src = cardData.link;
-  cardImage.alt = cardData.name;
-  cardTitle.textContent = cardData.name;
-  
-  // Лайк
-  likeButton.addEventListener('click', () => likeCallback(likeButton));
-  
-  // Удаление
-  deleteButton.addEventListener('click', () => deleteCallback(cardElement));
-  
-  // Открытие изображения
-  cardImage.addEventListener('click', () => imageCallback(cardData.link, cardData.name));
-  
-  return cardElement;
-};
+  const newCardElement = template.content.querySelector('.card').cloneNode(true);
+  const imageElement = newCardElement.querySelector('.card__image');
+  const titleElement = newCardElement.querySelector('.card__title');
+  const likeButton = newCardElement.querySelector('.card__like-button');
+  const deleteButton = newCardElement.querySelector('.card__delete-button');
+  const likeCount = newCardElement.querySelector('.card__likes-count')
 
-// Функция лайка
-const handleLike = (likeButton) => {
-  likeButton.classList.toggle('card__like-button_is-active');
-};
+  imageElement.src = data.link;
+  imageElement.alt = data.name;
+  titleElement.textContent = data.name;
+  likeCount.textContent = data.likes?.length ?? 0
 
-// Функция удаления
-const handleDelete = (cardElement) => {
-  cardElement.remove();
-};
+  if (data.owner?._id && data.owner._id !== profileId) {
+    deleteButton.style.display = 'none'
+  } else {
+    deleteButton.addEventListener('click', (event) => handleOpenDelete(event.target.closest('.card'), data._id))
+  }
+ 
+  if (data.likes?.some(curElement => curElement._id === profileId)) {
+    likeButton.classList.add('card__like-button_is-active')
+  }
 
-module.exports = { createCard, handleLike, handleDelete };
+  likeButton.addEventListener('click', (event) => likeCallback(event, data._id, likeCount))
+  imageElement.addEventListener('click', () => handleClick(imageElement.src, imageElement.alt))
+  return newCardElement;
+}
+
+const likeCard = async (event, cardId, likeCountElement) => {
+  const isLiked = event.target.classList.contains('card__like-button_is-active');
+  try {
+    let response;
+    if (isLiked) {
+      response = await apiMestoEndpoints.unlikeCard(cardId);
+    } else {
+      response = await apiMestoEndpoints.likeCard(cardId);
+    }
+    
+   
+    if (response && response.data && response.data.likes) {
+      event.target.classList.toggle('card__like-button_is-active');
+      likeCountElement.textContent = response.data.likes.length;
+    } else if (response && response.likes) {
+    
+      event.target.classList.toggle('card__like-button_is-active');
+      likeCountElement.textContent = response.likes.length;
+    } else {
+      console.error('Неожиданный формат ответа:', response);
+    }
+  } catch (err) {
+    console.error('Ошибка при лайке:', err);
+  }
+}
+
+module.exports = { createCard, likeCard }

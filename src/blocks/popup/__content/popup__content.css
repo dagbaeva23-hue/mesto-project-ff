@@ -17,3 +17,24 @@
     padding: 30px 20px;
   }
 }
+
+.content__loading {
+  display: none;
+  text-align: center;
+  padding: 50px;
+  font-size: 18px;
+  color: #666;
+}
+
+.content__loading.active {
+  display: block;
+}
+
+.content {
+  display: none;
+}
+
+.content.active {
+  display: block;
+}
+

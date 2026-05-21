@@ -11,11 +11,19 @@
 @import url('../blocks/popup/_is-animated/popup_is-animated.css');
 @import url('../blocks/popup/_is-opened/popup_is-opened.css');
 
-.profile__image {
-  background-size: cover;
-  background-position: center;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background-image: url('../images/avatar.jpg');
-}
+/* ===== ВАЛИДАЦИЯ ФОРМ ===== */
+
+
+
+
+
+/* ===== ЗАГРУЗКА КОНТЕНТА ===== */
+
+/* ===== АНИМАЦИЯ ПОПАПОВ ===== */
+
+
+
+
+/* ===== СЧЁТЧИК ЛАЙКОВ ===== */
+
+/* ===== АВАТАР (опционально) ===== */
