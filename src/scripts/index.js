@@ -1,7 +1,7 @@
 import '../styles/index.css';
 import '../vendor/normalize.css';
 
-import { createCard, updateLikeState, removeCard } from './card.js';
+import { createCard, updateLikeUI, removeCardFromDOM } from './card.js';
 import { openModal, closeModal } from './modal.js';
 import { apiMestoEndpoints } from '../api/apiMesto.js';
 import { clearValidation, enableValidation } from './validation.js';
@@ -76,7 +76,7 @@ const endLoadingContent = () => {
 };
 
 // Обработчик лайка
-const handleLike = async (likeButton, likeCount, cardId) => {
+const handleLikeClick = async (likeButton, likeCount, cardId) => {
   const isLiked = likeButton.classList.contains('card__like-button_is-active');
   
   try {
@@ -87,18 +87,17 @@ const handleLike = async (likeButton, likeCount, cardId) => {
       response = await apiMestoEndpoints.likeCard(cardId);
     }
     
-    // Обновляем интерфейс, используя чистую функцию из card.js
-    updateLikeState(likeButton, likeCount, response.likes.length);
+    updateLikeUI(likeButton, likeCount, response.likes.length);
   } catch (err) {
     console.error('Ошибка при лайке:', err);
   }
 };
 
-// Обработчик удаления
+// Обработчик удаления (с API)
 const handleDeleteCard = async (cardElement, cardId) => {
   try {
     await apiMestoEndpoints.deleteCard(cardId);
-    removeCard(cardElement);
+    removeCardFromDOM(cardElement);
     closeModal(popupDelete);
   } catch (err) {
     console.error('Ошибка удаления:', err);
@@ -186,7 +185,7 @@ const handleCardCreateFormSubmit = async (evt) => {
       newCardData,
       profileId,
       handleOpenDeletePopup,
-      handleLike,
+      handleLikeClick,
       handleClickCard
     );
     list.prepend(card);
@@ -220,7 +219,7 @@ const init = async () => {
         cardData,
         profileId,
         handleOpenDeletePopup,
-        handleLike,
+        handleLikeClick,
         handleClickCard
       );
       list.append(card);
@@ -233,6 +232,7 @@ const init = async () => {
 
   enableValidation(validationSettings);
 
+  // Слушатели событий
   addCardButton.addEventListener('click', handleOpenPopupTypeNewCard);
   buttonEdit.addEventListener('click', handleOpenPopupEdit);
   formElementEdit.addEventListener('submit', handleEditFormSubmit);
@@ -248,5 +248,6 @@ const init = async () => {
     });
   });
 };
+
 
 init();
