@@ -1,10 +1,11 @@
-require('../styles/index.css');
-const { createCard, likeCard } = require('./card.js');
-const { openModal, closeModal } = require('./modal.js');
-const avatarImage = require('../images/avatar.jpg');
-const { apiMestoEndpoints } = require('../api/apiMesto.js');
-const { clearValidation, enableValidation } = require('./validation.js');
-const { toggleButtonClass } = require('./utils.js');
+import '../styles/index.css';
+import '../vendor/normalize.css';
+
+import { createCard, updateLikeState, removeCard } from './card.js';
+import { openModal, closeModal } from './modal.js';
+import { apiMestoEndpoints } from '../api/apiMesto.js';
+import { clearValidation, enableValidation } from './validation.js';
+import { toggleButtonClass } from './utils.js';
 
 // DOM элементы
 const list = document.querySelector('.places__list');
@@ -19,11 +20,12 @@ const content = document.querySelector('.content');
 const buttonEdit = document.querySelector('.profile__edit-button');
 
 let profileId = null;
-let configTarget = {
+const configTarget = {
   currentCardElement: null,
   currentCardId: null
 };
 
+// Попапы
 const popupTypeEdit = document.querySelector('.popup_type_edit');
 const formElementEdit = document.forms['edit-profile'];
 const nameInput = formElementEdit.elements.name;
@@ -48,15 +50,17 @@ const formEditAvatar = document.forms['edit-avatar'];
 const inputUrlAvatar = formEditAvatar.elements.link;
 const buttonSubmitAvatar = formEditAvatar.elements.button;
 
+// Настройки валидации
 const validationSettings = {
   formSelector: '.popup__form',
   inputSelector: '.popup__input',
-  submitbuttonElementSelector: '.popup__button',
-  inactivebuttonElementClass: 'popup__button_disabled',
+  submitButtonSelector: '.popup__button',
+  inactiveButtonClass: 'popup__button_disabled',
   inputErrorClass: 'popup__input_type_error',
   errorClass: 'popup__error_visible'
 };
 
+// Загрузка контента
 const startLoadingContent = () => {
   if (loadingContent && content) {
     loadingContent.classList.add('active');
@@ -71,6 +75,49 @@ const endLoadingContent = () => {
   }
 };
 
+// Обработчик лайка
+const handleLike = async (likeButton, likeCount, cardId) => {
+  const isLiked = likeButton.classList.contains('card__like-button_is-active');
+  
+  try {
+    let response;
+    if (isLiked) {
+      response = await apiMestoEndpoints.unlikeCard(cardId);
+    } else {
+      response = await apiMestoEndpoints.likeCard(cardId);
+    }
+    
+    // Обновляем интерфейс, используя чистую функцию из card.js
+    updateLikeState(likeButton, likeCount, response.likes.length);
+  } catch (err) {
+    console.error('Ошибка при лайке:', err);
+  }
+};
+
+// Обработчик удаления
+const handleDeleteCard = async (cardElement, cardId) => {
+  try {
+    await apiMestoEndpoints.deleteCard(cardId);
+    removeCard(cardElement);
+    closeModal(popupDelete);
+  } catch (err) {
+    console.error('Ошибка удаления:', err);
+  }
+};
+
+// Открытие попапа удаления
+const handleOpenDeletePopup = (cardElement, cardId) => {
+  configTarget.currentCardElement = cardElement;
+  configTarget.currentCardId = cardId;
+  openModal(popupDelete);
+};
+
+// Подтверждение удаления
+const handleConfirmDelete = () => {
+  handleDeleteCard(configTarget.currentCardElement, configTarget.currentCardId);
+};
+
+// Обновление аватара
 const handleSubmitAvatar = async (evt) => {
   evt.preventDefault();
   toggleButtonClass(buttonSubmitAvatar, true, 'Сохранение...', validationSettings);
@@ -78,8 +125,9 @@ const handleSubmitAvatar = async (evt) => {
     const data = await apiMestoEndpoints.updateAvatar(inputUrlAvatar.value);
     profileAvatar.style.backgroundImage = `url(${data.avatar})`;
     closeModal(popupEditAvatar);
+    formEditAvatar.reset();
   } catch (err) {
-    console.error('Ошибка обновления аватара:', err);
+    console.log('Не удалось обновить аватар:', err);
   } finally {
     toggleButtonClass(buttonSubmitAvatar, false, 'Сохранить', validationSettings);
   }
@@ -90,26 +138,7 @@ const handleOpenAvatarPopup = () => {
   clearValidation(popupEditAvatar, validationSettings);
 };
 
-const handleOpenDeletePopup = (cardElement, cardId) => {
-  openModal(popupDelete);
-  clearValidation(popupDelete, validationSettings);
-  configTarget.currentCardId = cardId;
-  configTarget.currentCardElement = cardElement;
-};
-
-const removeCard = async (buttonElementDelete, popupDelete, configTarget) => {
-  toggleButtonClass(buttonElementDelete, true, 'Удаление...', validationSettings);
-  try {
-    await apiMestoEndpoints.deleteCard(configTarget.currentCardId);
-    configTarget.currentCardElement.remove();
-    closeModal(popupDelete);
-  } catch (err) {
-    console.error('Ошибка удаления:', err);
-  } finally {
-    toggleButtonClass(buttonElementDelete, false, 'Удалить', validationSettings);
-  }
-};
-
+// Открытие изображения
 const handleClickCard = (imageSrc, imageAlt) => {
   openModal(popupTypeImage);
   popupImage.src = imageSrc;
@@ -117,11 +146,13 @@ const handleClickCard = (imageSrc, imageAlt) => {
   popupCaption.textContent = imageAlt;
 };
 
+// Открытие попапа добавления карточки
 const handleOpenPopupTypeNewCard = () => {
   openModal(popupTypeNewCard);
   clearValidation(popupTypeNewCard, validationSettings);
 };
 
+// Открытие попапа редактирования профиля
 const handleOpenPopupEdit = () => {
   openModal(popupTypeEdit);
   nameInput.value = profileName.textContent;
@@ -129,6 +160,7 @@ const handleOpenPopupEdit = () => {
   clearValidation(popupTypeEdit, validationSettings);
 };
 
+// Редактирование профиля
 const handleEditFormSubmit = async (evt) => {
   evt.preventDefault();
   toggleButtonClass(buttonSumbitEdit, true, 'Сохранение...', validationSettings);
@@ -138,41 +170,59 @@ const handleEditFormSubmit = async (evt) => {
     profileDescription.textContent = data.about;
     closeModal(popupTypeEdit);
   } catch (err) {
-    console.error('Ошибка обновления профиля:', err);
+    console.log('Ошибка обновления профиля:', err);
   } finally {
     toggleButtonClass(buttonSumbitEdit, false, 'Сохранить', validationSettings);
   }
 };
 
+// Добавление новой карточки
 const handleCardCreateFormSubmit = async (evt) => {
   evt.preventDefault();
   toggleButtonClass(buttonSubmitCreate, true, 'Сохранение...', validationSettings);
   try {
-    const newCard = await apiMestoEndpoints.addNewCard(placeInput.value, urlInput.value);
-    const cardElement = createCard(newCard, profileId, handleOpenDeletePopup, likeCard, handleClickCard);
-    list.prepend(cardElement);
+    const newCardData = await apiMestoEndpoints.addNewCard(placeInput.value, urlInput.value);
+    const card = createCard(
+      newCardData,
+      profileId,
+      handleOpenDeletePopup,
+      handleLike,
+      handleClickCard
+    );
+    list.prepend(card);
     formCardCreate.reset();
     closeModal(popupTypeNewCard);
   } catch (err) {
-    console.error('Ошибка добавления карточки:', err);
+    console.log('Ошибка добавления карточки:', err);
   } finally {
     toggleButtonClass(buttonSubmitCreate, false, 'Сохранить', validationSettings);
   }
 };
 
+// Инициализация
 const init = async () => {
   startLoadingContent();
   try {
-    const [profile, cards] = await Promise.all([apiMestoEndpoints.getProfile(), apiMestoEndpoints.getCards()]);
+    const [profile, cards] = await Promise.all([
+      apiMestoEndpoints.getProfile(),
+      apiMestoEndpoints.getCards()
+    ]);
+    
+    profileAvatar.style.backgroundImage = `url(${profile.avatar})`;
     profileName.textContent = profile.name;
     profileDescription.textContent = profile.about;
     profileId = profile._id;
-    profileAvatar.style.backgroundImage = `url(${profile.avatar})`;
-    profileAvatar.style.backgroundSize = 'cover';
-    profileAvatar.style.backgroundPosition = 'center';
+
+    popups.forEach(popup => popup.classList.add('popup_is-animated'));
 
     cards.forEach(cardData => {
-      const card = createCard(cardData, profileId, handleOpenDeletePopup, likeCard, handleClickCard);
+      const card = createCard(
+        cardData,
+        profileId,
+        handleOpenDeletePopup,
+        handleLike,
+        handleClickCard
+      );
       list.append(card);
     });
   } catch (err) {
@@ -183,13 +233,11 @@ const init = async () => {
 
   enableValidation(validationSettings);
 
-  popups.forEach(popup => popup.classList.add('popup_is-animated'));
-
   addCardButton.addEventListener('click', handleOpenPopupTypeNewCard);
   buttonEdit.addEventListener('click', handleOpenPopupEdit);
   formElementEdit.addEventListener('submit', handleEditFormSubmit);
   formCardCreate.addEventListener('submit', handleCardCreateFormSubmit);
-  buttonDelete.addEventListener('click', () => removeCard(buttonDelete, popupDelete, configTarget));
+  buttonDelete.addEventListener('click', handleConfirmDelete);
   profileAvatar.addEventListener('click', handleOpenAvatarPopup);
   formEditAvatar.addEventListener('submit', handleSubmitAvatar);
 

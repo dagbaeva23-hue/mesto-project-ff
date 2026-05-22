@@ -1,68 +1,46 @@
-const axios = require("axios");
+// Создание карточки
+const createCard = (data, profileId, handleOpenDelete, handleLike, handleClick) => {
+  const template = document.querySelector('#card-template');
+  const newCardElement = template.content.querySelector('.card').cloneNode(true);
+  const imageElement = newCardElement.querySelector('.card__image');
+  const titleElement = newCardElement.querySelector('.card__title');
+  const likeButton = newCardElement.querySelector('.card__like-button');
+  const deleteButton = newCardElement.querySelector('.card__delete-button');
+  const likeCount = newCardElement.querySelector('.card__likes-count')
 
-const apiMesto = axios.create({
-  baseURL: 'https://nomoreparties.co/v1',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'e331375d-4ab0-428d-8f48-d5a835c55949'
+  imageElement.src = data.link;
+  imageElement.alt = data.name;
+  titleElement.textContent = data.name;
+  likeCount.textContent = data.likes?.length ?? 0
+
+  // Кнопка удаления (только для своих карточек)
+  if (data.owner?._id && data.owner._id !== profileId) {
+    deleteButton.style.display = 'none'
+  } else {
+    deleteButton.addEventListener('click', () => handleOpenDelete(newCardElement, data._id))
   }
-})
-
-apiMesto.interceptors.response.use(
-  response => {
-    return response.data  
-  },
-  error => {
-    const { status, data } = error.response || {};
-    console.log('API Error:', status, data);
-    return Promise.reject({
-      success: false,
-      error: data,
-      status
-    });
+ 
+  // Состояние лайка
+  if (data.likes?.some(curElement => curElement._id === profileId)) {
+    likeButton.classList.add('card__like-button_is-active')
   }
-);
-
-const apiMestoEndpoints = {
-  getProfile: async () => {
-    const response = await apiMesto.get('/higher-front-back-dev_cohort_01/users/me');
-    return response
-  },
-
-  getCards: async () => {
-    const response = await apiMesto.get('/higher-front-back-dev_cohort_01/cards')
-    return response
-  },
-
-  updateProfile: async (name, about) => {
-    const response = await apiMesto.patch('/higher-front-back-dev_cohort_01/users/me', { name, about });
-    return response
-  },
-
-  addNewCard: async (name, link) => {
-    const response = await apiMesto.post('/higher-front-back-dev_cohort_01/cards', { name, link });
-    return response
-  },
-
-  deleteCard: async (cardId) => {
-    const response = await apiMesto.delete(`/higher-front-back-dev_cohort_01/cards/${cardId}`);
-    return response
-  },
-
-  likeCard: async (cardId) => {
-    const response = await apiMesto.put(`/higher-front-back-dev_cohort_01/cards/likes/${cardId}`)
-    return response
-  },
-
-  unlikeCard: async (cardId) => {
-    const response = await apiMesto.delete(`/higher-front-back-dev_cohort_01/cards/likes/${cardId}`)
-    return response
-  },
-
-  updateAvatar: async (avatar) => {
-    const response = await apiMesto.patch('/higher-front-back-dev_cohort_01/users/me/avatar', { avatar })
-    return response
-  }
+ 
+  likeButton.addEventListener('click', () => handleLike(likeButton, likeCount, data._id))
+  
+  imageElement.addEventListener('click', () => handleClick(imageElement.src, imageElement.alt))
+  
+  return newCardElement;
 }
 
-module.exports = { apiMestoEndpoints };
+
+const updateLikeState = (likeButton, likeCount, likesCount) => {
+  likeButton.classList.toggle('card__like-button_is-active');
+  likeCount.textContent = likesCount;
+}
+
+
+const removeCard = (cardElement) => {
+  cardElement.remove();
+}
+
+module.exports = { createCard, updateLikeState, removeCard };
